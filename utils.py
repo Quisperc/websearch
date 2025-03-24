@@ -1,10 +1,11 @@
-# qidian_lib.py
+# utils.py
 import re
 import urllib.request
 import urllib.error
+from pathlib import Path
+
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
-from lxml import etree
 import csv
 import pandas as pd
 
@@ -16,7 +17,7 @@ class WebUtils:
         filename = re.sub(r'://', '_', url)
         filename = re.sub(r'[^\w\.-]', '_', filename)
         filename = re.sub(r'_+', '_', filename).strip('_')
-        return f"{filename or 'default'}.txt"
+        return f"{filename or 'default'}.html"
 
     @staticmethod
     def decode_content(content, response):
@@ -45,9 +46,11 @@ class Fetcher:
     def __init__(self):
         self.ua = UserAgent()
 
+    # 生成随机用户
     def get_random_headers(self):
         return {'User-Agent': self.ua.random}
 
+    # 获取并保存网页内容
     def fetch_and_save(self, url, save_origin=True):
         """获取并保存网页内容"""
         try:
@@ -64,46 +67,56 @@ class Fetcher:
 
                 return WebUtils.decode_content(content, response)
 
-        except urllib.error.URLError as e:
-            print(f"⚠️ 连接失败: {e.reason}")
         except urllib.error.HTTPError as e:
             print(f"⛔ HTTP错误 {e.code}: {e.reason}")
+        except urllib.error.URLError as e:
+            print(f"⚠️ 连接失败: {e.reason}")
         except Exception as e:
             print(f"❌ 意外错误: {str(e)}")
-
-
-class Parser:
-    @staticmethod
-    def parse_qidian(content):
-        """解析起点月票榜页面"""
-        html = etree.HTML(content)
-        items = html.xpath('//*[@id="rank-view-list"]/div/ul/li')
-
-        results = []
-        for item in items:
-            data = {
-                '排名': item.xpath('.//div[@class="book-img-box"]/span/text()')[0],
-                '书名': item.xpath('.//h4/a/text()')[0],
-                '作者': item.xpath('.//p[@class="author"]/a[1]/text()')[0],
-                '类型': item.xpath('.//p[@class="author"]/a[2]/text()')[0],
-                '简介': item.xpath('.//p[@class="intro"]/text()')[0].strip(),
-                '最新章节': item.xpath('.//p[@class="update"]/a/text()')[0],
-                '图书链接': 'https:' + item.xpath('.//h4/a/@href')[0],
-                '封面图片': 'https:' + item.xpath('.//div[@class="book-img-box"]/a/img/@src')[0]
-            }
-            results.append(data)
-        return results
 
 
 class Saver:
     @staticmethod
     def save_data(data, format_type='both'):
-        """保存解析后的数据"""
-        if format_type in ('csv', 'both'):
-            with open('parsed/results.csv', 'w', newline='', encoding='utf-8-sig') as f:
-                writer = csv.DictWriter(f, fieldnames=data[0].keys())
-                writer.writeheader()
-                writer.writerows(data)
+        """安全保存解析数据"""
+        try:
+            # 确保目录存在
+            save_dir = Path("parsed")
+            save_dir.mkdir(exist_ok=True, parents=True)
 
-        if format_type in ('excel', 'both'):
-            pd.DataFrame(data).to_excel('parsed/results.xlsx', index=False)
+            # 统一文件名处理
+            def safe_filename(title):
+                return "".join([c if c.isalnum() else "_" for c in title[:50]]).rstrip()
+
+            # 保存CSV和Excel
+            if format_type in ('csv', 'both') and data:
+                csv_path = save_dir / "results.csv"
+                with csv_path.open('w', newline='', encoding='utf-8') as f:
+                    writer = csv.DictWriter(f, fieldnames=data[0].keys())
+                    writer.writeheader()
+                    writer.writerows(data)
+            if format_type in ('excel', 'both') and data:
+                pd.DataFrame(data).to_excel(save_dir / "results.xlsx", index=False)
+            # 保存TXT文件到子目录
+            txt_dir = save_dir / "articles"
+            txt_dir.mkdir(exist_ok=True)
+
+            for article in data:
+                if not article.get('title'):
+                    continue
+
+                filename = safe_filename(article['title']) + ".txt"
+                try:
+                    with (txt_dir / filename).open('w', encoding='utf-8') as f:
+                        f.write(f"Title: {article.get('title', '')}\n")
+                        f.write(f"Url: {article.get('url', '')}\n")
+                        f.write(f"Author: {article.get('author', '')}\n")
+                        f.write(f"Date: {article.get('publish_time', '')}\n")
+                        f.write("\nContent:\n")
+                        f.write(article.get('content', ''))
+                except Exception as e:
+                    print(f"⚠️ 保存文件 {filename} 失败: {str(e)}")
+        except PermissionError:
+            print("❌ 权限错误：请关闭已打开的结果文件")
+        except Exception as e:
+            print(f"❌ 保存失败: {str(e)}")
