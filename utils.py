@@ -82,7 +82,7 @@ class Fetcher:
 
 class Saver:
     @staticmethod
-    def save_data(data, format_type='both'):
+    def save_data(data,exclude_columns=None, format_type='both'):
         """安全保存解析数据"""
         try:
             # 确保目录存在
@@ -97,15 +97,22 @@ class Saver:
             if format_type in ('csv', 'both') and data:
                 csv_path = save_dir / "results.csv"
                 with csv_path.open('w', newline='', encoding='utf-8') as f:
-                    writer = csv.DictWriter(f, fieldnames=data[0].keys())
+                    # writer = csv.DictWriter(f, fieldnames=data[0].keys())
+                    # 生成排除后的字段列表
+                    fieldnames = [key for key in data[0].keys() if key not in exclude_columns]
+                    writer = csv.DictWriter(f, fieldnames=fieldnames)
                     writer.writeheader()
                     writer.writerows(data)
             if format_type in ('excel', 'both') and data:
-                pd.DataFrame(data).to_excel(save_dir / "results.xlsx", index=False)
+                # pd.DataFrame(data).to_excel(save_dir / "results.xlsx", index=False)
+                df = pd.DataFrame(data)
+                # 删除指定列（忽略不存在的情况）
+                df.drop(columns=exclude_columns, inplace=True, errors='ignore')
+                df.to_excel(save_dir / "results.xlsx", index=False)
+
             # 保存TXT文件到子目录
             txt_dir = save_dir / "articles"
             txt_dir.mkdir(exist_ok=True)
-
             for article in data:
                 if not article.get('title'):
                     continue

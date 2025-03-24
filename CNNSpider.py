@@ -1,5 +1,6 @@
 # CNNSpider.py
 import json
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from lxml import etree
 
@@ -18,6 +19,8 @@ class CNNSpider:
         ]
         self.fetcher = Fetcher()
         self.delay_range = (1, 3)  # 随机延迟范围
+        self.thread_workers = 5  # 新增可配置参数
+        self.request_timeout = 10  # 新增超时控制
 
     def get_article_links(self, content):
         """从列表页获取文章链接"""
@@ -27,7 +30,7 @@ class CNNSpider:
     def crawl_section(self, section_url):
         """爬取单个板块"""
         print(f"⏳ 开始爬取板块: {section_url}")
-        content = self.fetcher.fetch_and_save(section_url)
+        content = self.fetcher.fetch_and_save(section_url,False)
         if not content:
             return []
 
@@ -45,9 +48,11 @@ class CNNSpider:
 
     def crawl_article(self, url):
         """爬取单篇文章"""
-        time.sleep(random.uniform(*self.delay_range))  # 随机延迟
+        time.sleep(random.uniform(*self.delay_range)) # 随机延迟
+        # 给fetch_and_save添加超时参数
+        # content = self.fetcher.fetch_and_save(url, False, timeout=self.request_timeout)
         content = self.fetcher.fetch_and_save(url, False)
-        return Parser.parse_cnn(content,url) if content else None
+        return Parser.parse_cnn(content, url) if content else None
 
     def crawl(self, max_articles=50):
         """主爬取方法"""
@@ -58,14 +63,25 @@ class CNNSpider:
             all_articles.extend(self.crawl_section(section))
             if len(all_articles) >= max_articles:
                 break
-
-        # 第二步：爬取具体文章
+        # 第二步：并行爬取具体文章
         results = []
-        for i, url in enumerate(all_articles[:max_articles]):
-            print(f"📰 正在处理文章 ({i + 1}/{len(all_articles)})：" + url)
-            if article_data := self.crawl_article(url):
-                results.append(article_data)
+        articles_to_crawl = all_articles[:max_articles]
 
+        # 使用线程池（控制在5个并发以内）
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            futures = {
+                executor.submit(self.crawl_article, url): url
+                for url in articles_to_crawl
+            }
+
+            for i, future in enumerate(as_completed(futures)):
+                url = futures[future]
+                try:
+                    if article_data := future.result():
+                        results.append(article_data)
+                        print(f"✅ 完成文章 ({len(results)}/{len(articles_to_crawl)})：{url}")
+                except Exception as e:
+                    print(f"⛔ 处理失败: {url} - {str(e)}")
         # 保存结果
         if results:
             Saver.save_data(results)

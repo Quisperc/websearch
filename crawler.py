@@ -9,6 +9,9 @@ if __name__ == "__main__":
     # 创建存储目录
     os.makedirs('origin', exist_ok=True)
     os.makedirs('parsed', exist_ok=True)
+    # 创建存储目录
+    os.makedirs('origin/Chinese', exist_ok=True)
+    os.makedirs('origin/English', exist_ok=True)
 
     # spiderC = webSpider()
     # spiderC.crawl(pages=27810)
