@@ -46,7 +46,7 @@ class CNNSpider:
     def crawl_article(self, url):
         """爬取单篇文章"""
         time.sleep(random.uniform(*self.delay_range))  # 随机延迟
-        content = self.fetcher.fetch_and_save(url)
+        content = self.fetcher.fetch_and_save(url, False)
         return Parser.parse_cnn(content,url) if content else None
 
     def crawl(self, max_articles=50):

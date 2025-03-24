@@ -14,6 +14,6 @@ if __name__ == "__main__":
     # spiderC.crawl(pages=27810)
 
     spiderE = CNNSpider()
-    spiderE.crawl(2)
+    spiderE.crawl(600)
 
     print("🎉 所有任务已完成！")

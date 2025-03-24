@@ -1,3 +1,5 @@
+from numpy.distutils.system_info import language_map
+
 from utils import Fetcher, Saver
 
 

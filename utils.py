@@ -51,7 +51,7 @@ class Fetcher:
         return {'User-Agent': self.ua.random}
 
     # 获取并保存网页内容
-    def fetch_and_save(self, url, save_origin=True):
+    def fetch_and_save(self, url, language=True, save_origin=True):
         """获取并保存网页内容"""
         try:
             req = urllib.request.Request(url, headers=self.get_random_headers())
@@ -61,9 +61,14 @@ class Fetcher:
                 if save_origin:
                     filename = WebUtils.generate_filename(url)
                     decoded = WebUtils.decode_content(content, response)
-                    with open(f'origin/{filename}', 'w', encoding='utf-8') as f:
-                        f.write(decoded)
-                    print(f"✅ 原始网页保存至: origin/{filename}")
+                    if language:
+                        with open(f'origin/Chinese/{filename}', 'w', encoding='utf-8') as f:
+                            f.write(decoded)
+                        print(f"✅ 原始网页保存至: origin/Chinese/{filename}")
+                    else:
+                        with open(f'origin/English/{filename}', 'w', encoding='utf-8') as f:
+                            f.write(decoded)
+                        print(f"✅ 原始网页保存至: origin/English/{filename}")
 
                 return WebUtils.decode_content(content, response)
 
