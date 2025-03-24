@@ -117,8 +117,6 @@ class Parser:
             article_data["author"] = ", ".join(filter(None, authors)) or "Unknown"
             article_data["publish_time"] = ld_json.get("datePublished", "").strip()
             # article_data["content"] = ld_json.get("articleBody", "").replace("\n\n", "\n").strip()
-            # 展示分段
-            article_data["content"] = ld_json.get("articleBody", "").strip()
 
         # 降级处理：从HTML元素提取
         if not article_data["title"]:
@@ -137,10 +135,18 @@ class Parser:
         # if not article_data["content"]:
         #     content_paras = html.xpath('//div[contains(@class, "article__content")]//p[not(@class)]//text()')
         #     article_data["content"] = "\n".join(p.strip() for p in content_paras if p.strip())
-        # 修改2：内容段落用双换行符连接
-        if not article_data["content"]:
-            content_paras = html.xpath('//div[contains(@class, "article__content")]//p//text()')  # 移除了[not(@class)]
-            cleaned_paras = [p.strip() for p in content_paras if p.strip()]
-            article_data["content"] = "\n\n".join(cleaned_paras)  # 单换行改为双换行
+        # 强制使用HTML元素提取（保证分段）
+        content_paras = []
+        # 通过更精准的XPath定位段落
+        para_nodes = html.xpath(
+            '//div[contains(@class, "article__content")]//p[@class="paragraph inline-placeholder vossi-paragraph"]')
+        for p in para_nodes:
+            # 提取段落内所有文本（包括子节点）
+            texts = p.xpath('.//text()')
+            cleaned = ' '.join([t.strip() for t in texts if t.strip()])
+            if cleaned:
+                content_paras.append(cleaned)
+        # 用双换行符连接段落
+        article_data["content"] = '\n\n'.join(content_paras)
 
         return article_data
