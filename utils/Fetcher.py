@@ -104,7 +104,7 @@ class Fetcher:
 
         # 构建存储路径
         lang_dir = language if isinstance(language, str) else "common"
-        save_path = Path("../origin") / lang_dir / filename
+        save_path = Path("origin") / lang_dir / filename
 
         # 创建目录（递归创建缺失目录）
         save_path.parent.mkdir(parents=True, exist_ok=True)

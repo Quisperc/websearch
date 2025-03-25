@@ -7,6 +7,7 @@ from kuaishu_spider import kuaishuSpider
 
 from biqu_Spider import biquSpider
 from utils.TqdmLogHandler import logger
+from yinyuxiaoshuo_spider import yinyuSpider
 
 
 def main():
@@ -64,11 +65,17 @@ def main():
     # cnn_spider = CNNSpider(common_config)
     # cnn_spider.crawl(max_articles=600)
 
-    novel_spider = biquSpider({
+    # novel_spider = biquSpider({
+    #     **common_config,
+    #     "delay_range": (2, 5)  # 小说站需要更保守的爬取间隔
+    # })
+    # novel_spider.crawl(503)
+
+    novel_spider = yinyuSpider({
         **common_config,
         "delay_range": (2, 5)  # 小说站需要更保守的爬取间隔
     })
-    novel_spider.crawl(503)
+    novel_spider.crawl(1)
     logger.info("🎉 所有任务已完成！")
     # 显示最终统计
     # logger.info("\n📊 最终统计:")
