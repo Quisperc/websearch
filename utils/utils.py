@@ -86,7 +86,7 @@ class Fetcher:
         filename = WebUtils.generate_filename(url)
         # lang_dir = "Chinese" if language else "English"
         lang_dir = language
-        save_path = Path("origin") / lang_dir / filename
+        save_path = Path("../origin") / lang_dir / filename
 
         save_path.parent.mkdir(parents=True, exist_ok=True)
         with save_path.open('w', encoding='utf-8') as f:
