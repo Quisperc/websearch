@@ -6,7 +6,7 @@ from cnn_spider import CNNSpider
 from kuaishu_spider import kuaishuSpider
 
 from biqu_Spider import biquSpider
-from utils import logger
+from utils.TqdmLogHandler import logger
 
 
 def main():

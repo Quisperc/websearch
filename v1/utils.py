@@ -1,4 +1,4 @@
-# utils.py
+# WebUtils.py
 import re
 import urllib.request
 import urllib.error

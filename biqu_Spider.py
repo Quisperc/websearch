@@ -1,7 +1,9 @@
+# biqu_Spider.py
 from urllib.parse import urljoin
 from lxml import etree
 
-from utils import BaseSpider, logger, Saver
+from utils.BaseSpider import BaseSpider
+from utils.TqdmLogHandler import logger
 
 
 class biquSpider(BaseSpider):

@@ -1,7 +1,9 @@
 # cnn_spider.py
 import json
 from lxml import etree
-from utils import BaseSpider, Saver, logger
+from utils.BaseSpider import BaseSpider
+from utils.Saver import Saver
+from utils.TqdmLogHandler import logger
 
 
 class CNNSpider(BaseSpider):
