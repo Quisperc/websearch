@@ -20,8 +20,8 @@ def main():
     # 配置爬虫参数
     common_config = {
         "retries": 3,
-        "timeout": 15,
-        "delay_range": (1, 3),
+        "timeout": 30000,
+        "delay_range": (5000, 6000),
         "threads": 5
     }
 
@@ -73,9 +73,9 @@ def main():
 
     novel_spider = yinyuSpider({
         **common_config,
-        "delay_range": (2, 5)  # 小说站需要更保守的爬取间隔
+        "delay_range": (1, 2)  # 小说站需要更保守的爬取间隔
     })
-    novel_spider.crawl(1)
+    novel_spider.crawl(10)
     logger.info("🎉 所有任务已完成！")
     # 显示最终统计
     # logger.info("\n📊 最终统计:")

@@ -85,7 +85,7 @@ class CNNSpider(BaseSpider):
             list: 本板块提取到的文章链接列表
         """
         logger.info(f"⏳ 开始爬取板块: {url}")
-        content = self.fetcher.fetch_and_save(url, language="CNN")  # 带自动缓存的请求
+        content = self.fetcher.fetch_and_save(url, direction="CNN")  # 带自动缓存的请求
 
         # 内容有效性校验
         if not content:
@@ -145,7 +145,7 @@ class CNNSpider(BaseSpider):
         self.random_delay()  # 随机延迟（继承自BaseSpider）
         logger.info(f"⏳ 开始爬取文章: {url}")
 
-        content = self.fetcher.fetch_and_save(url, language="CNN", save_origin=True)
+        content = self.fetcher.fetch_and_save(url, direction="CNN", save_origin=True)
         return self._parse_article(content, url) if content else None
 
     def _parse_article(self, content, url):

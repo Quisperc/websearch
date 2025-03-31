@@ -2,10 +2,9 @@
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 from typing import Optional, List, Dict
-
+from pandas.core.generic import bool_t
 from utils.BaseSpider import BaseSpider
 from utils.TqdmLogHandler import logger
-
 
 class yinyuSpider(BaseSpider):
     """英语小说章节爬虫"""
@@ -27,7 +26,9 @@ class yinyuSpider(BaseSpider):
             title = html.find('title').get_text(strip=True) if html.title else "No Title"
 
             # 使用CSS选择器提高准确性
-            book_items = html.select('h2.inline.text-danger.hover\\:text-hover1.font-semibold a')
+            # book_items = html.select('h2.inline.text-danger.hover\\:text-hover1.font-semibold a')
+            # 筛选英文名
+            book_items = html.select('h2.inline.italic.text-xs.text-gray1.hover\\:text-hover1.max-sm\\:hidden.ml-2 a')
 
             for book_link in book_items:
                 if not (name := book_link.get_text(strip=True)):
@@ -58,23 +59,24 @@ class yinyuSpider(BaseSpider):
 
             # 使用更稳健的选择器
             # title = html.find('title').get_text(strip=True) if html.title else "No Title"
-
+            book_name = html.select('h2.text-sm.inline.ml-2.max-sm\\:hidden')
             # 使用CSS选择器提高准确性
             chapter_items = html.select('a.text-danger.hover\\:text-hover1[href]')
 
+            # 获取章节名和对应的url
             for chapter_link in chapter_items:
-                if not (name := chapter_link.get_text(strip=True)):
+                if not (chapter_name := chapter_link.get_text(strip=True)):
                     continue
 
                 if not (href := chapter_link.get('href')):
                     continue
                 available_chapters.append({
-                    "name": name,
+                    "chapter_name": chapter_name,
                     "url": urljoin(self.base_url, href)
                 })
 
             return {
-                # "title": title,
+                "book_name": book_name,
                 "chapters": available_chapters,
                 "source_url": self.current_url
             }
@@ -102,9 +104,10 @@ class yinyuSpider(BaseSpider):
                     break
 
                 # 获取页面内容
+                self.random_delay()
                 content = self.fetcher.fetch_and_save(
                     url=self.current_url,
-                    language="yinyu",
+                    direction="yinyu",
                     save_origin=True
                 )
 
@@ -125,9 +128,10 @@ class yinyuSpider(BaseSpider):
                     book_name = book["name"]
                     if book_url:
                         # 获取页面内容
+                        self.random_delay()
                         content = self.fetcher.fetch_and_save(
                             url=book_url,
-                            language="yinyu/{}".format(book_name),
+                            direction="yinyu/{}".format(book_name),
                             save_origin=True
                         )
                         logger.info(book_url)
@@ -136,17 +140,14 @@ class yinyuSpider(BaseSpider):
                                 chapter_url = chapter["url"]
                                 logger.info(chapter_url)
                                 # 获取页面内容
+                                self.random_delay()
                                 content = self.fetcher.fetch_and_save(
                                     url=chapter_url,
-                                    language="yinyu/{}".format(book_name),
+                                    file_name="{}-{}".format(book_name, chapter["chapter_name"]),
+                                    direction="yinyu/{}".format(book_name),
                                     save_origin=True
                                 )
                         else: logger.info("🛑 解析章节列表失败")
-
-                    # 这里可以添加具体处理逻辑，例如：
-                    # 1. 爬取书籍详情页
-                    # 2. 解析章节内容
-                    # 3. 保存到数据库
 
                     max_articles -= 1
                     if max_articles <= 0:

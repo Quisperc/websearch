@@ -6,6 +6,8 @@ from fake_useragent import UserAgent
 import urllib.request
 import urllib.error
 
+from numpy import random
+
 from utils.TqdmLogHandler import logger
 from utils.WebUtils import WebUtils
 
@@ -43,7 +45,7 @@ class Fetcher:
         """
         return {'User-Agent': self.ua.random}
 
-    def fetch_and_save(self, url, language=True, save_origin=True):
+    def fetch_and_save(self, url, file_name=None, direction=True, save_origin=True):
         """执行请求并保存网页内容（核心方法）
 
         流程：
@@ -54,7 +56,8 @@ class Fetcher:
 
         Args:
             url (str): 目标URL
-            language (bool/str): 语言标识（用于文件分类）
+            file_name(str): 保存的文件名
+            direction (bool/str): 语言标识（用于文件分类）
             save_origin (bool): 是否保存原始内容
 
         Returns:
@@ -74,7 +77,7 @@ class Fetcher:
 
                     # 保存原始文件（需开启save_origin）
                     if save_origin:
-                        self._save_origin_file(url, decoded, language)
+                        self._save_origin_file(url, decoded, direction, file_name)
 
                     return decoded
 
@@ -88,7 +91,7 @@ class Fetcher:
 
         return None
 
-    def _save_origin_file(self, url, content, language):
+    def _save_origin_file(self, url, content, direction,file_name=None):
         """保存原始网页到本地（内部方法）
 
         文件路径结构：
@@ -97,13 +100,16 @@ class Fetcher:
         Args:
             url (str): 原始URL（用于生成文件名）
             content (str): 要保存的内容
-            language (str): 语言分类目录名
+            direction (str): 分类目录名
         """
-        # 生成安全文件名（去除特殊字符）
-        filename = WebUtils.generate_filename(url)
+        if file_name is None:
+            # 生成安全文件名（去除特殊字符）
+            filename = WebUtils.generate_filename(url)
+        else:
+            filename = file_name
 
         # 构建存储路径
-        lang_dir = language if isinstance(language, str) else "common"
+        lang_dir = direction if isinstance(direction, str) else "common"
         save_path = Path("origin") / lang_dir / filename
 
         # 创建目录（递归创建缺失目录）

@@ -45,7 +45,7 @@ class BaseSpider(ABC):
         # 初始化请求器（配置重试和超时）
         self.fetcher = Fetcher(
             retries=self.config.get('retries', 3),  # 默认3次重试
-            timeout=self.config.get('timeout', 10)  # 默认10秒超时
+            timeout=self.config.get('timeout', 10),  # 默认10秒超时
         )
 
         # 请求延迟配置（防止IP封锁）

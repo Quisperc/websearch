@@ -82,7 +82,7 @@ class kuaishuSpider(BaseSpider):
         logger.info(f"🕸️ 正在爬取第 {page_num} 页: {url}")
 
         # 带自动缓存的请求（原始HTML保存至data/novel/raw目录）
-        content = self.fetcher.fetch_and_save(url, language="Novel")
+        content = self.fetcher.fetch_and_save(url, direction="Novel")
         return self._parse_page(content, url) if content else None
 
     def _parse_page(self, content, url):

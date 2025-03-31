@@ -108,7 +108,7 @@ class biquSpider(BaseSpider):
             #     break
 
             # 获取并缓存原始页面
-            content = self.fetcher.fetch_and_save(current_url, language="22biqu", save_origin=True)
+            content = self.fetcher.fetch_and_save(current_url, direction="22biqu", save_origin=True)
 
             # 数据保存逻辑（当前注释状态，按需启用）
             # if article := self._extract_article(content):
