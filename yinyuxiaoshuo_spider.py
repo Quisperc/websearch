@@ -1,9 +1,12 @@
 # yinyu_Spider.py
+import re
+from pathlib import Path
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 from typing import Optional, List, Dict
 from pandas.core.generic import bool_t
 from utils.BaseSpider import BaseSpider
+from utils.Saver import Saver
 from utils.TqdmLogHandler import logger
 
 class yinyuSpider(BaseSpider):
@@ -84,15 +87,26 @@ class yinyuSpider(BaseSpider):
             logger.error(f"解析失败: {str(e)}", exc_info=True)
             return None
 
+    # 解析单个章节标题及内容
     def _extract_chapter(self, content: str) -> Optional[Dict]:
-        html = BeautifulSoup(content, 'lxml')
-
-    def _get_next_page(self, booklists: Dict) -> Optional[str]:
-        """分页逻辑示例（需根据实际网站实现）"""
-        # 示例：假设页面有包含 next page 的链接
-        # next_page = booklists.get('html').find('a', text='Next Page')
-        # return urljoin(self.base_url, next_page['href']) if next_page else None
-        return None  # 暂时禁用分页
+        try:
+            html = BeautifulSoup(content, 'lxml')
+            # 使用 select_one 获取单个元素
+            chapter_title = html.select_one('h2.text-danger.text-center.text-lg.font-bold.mt-2')
+            chapter_name = chapter_title.get_text(strip=True) if chapter_title else None
+            # 获取所有 c-en 元素并拼接内容
+            content_elements = html.select('div.c-en')
+            chapter_content = "\n".join([
+                elem.get_text(strip=True)
+                for elem in content_elements
+            ])
+            return {
+                "chapter_name": chapter_name,
+                "content": chapter_content,
+            }
+        except Exception as e:
+            logger.error(f"解析失败: {str(e)}", exc_info=True)
+            return None
 
     def crawl(self, max_articles: int = 3) -> None:
         """执行爬取流程（强化错误处理版本）"""
@@ -121,7 +135,7 @@ class yinyuSpider(BaseSpider):
                     logger.error("🛑 解析书籍列表失败")
                     break
 
-                # 处理书籍条目
+                # 轮询书籍列表
                 for book in booklists.get("books", [])[:max_articles]:
                     logger.info(f"📚 正在处理: {book['name']}")
                     book_url = book["url"]
@@ -135,6 +149,7 @@ class yinyuSpider(BaseSpider):
                             save_origin=True
                         )
                         logger.info(book_url)
+                        # 轮询每本书章节列表
                         if chapter_lists := self._extract_book(content):
                             for chapter in chapter_lists.get("chapters", []):
                                 chapter_url = chapter["url"]
@@ -143,22 +158,25 @@ class yinyuSpider(BaseSpider):
                                 self.random_delay()
                                 content = self.fetcher.fetch_and_save(
                                     url=chapter_url,
-                                    file_name="{}-{}".format(book_name, chapter["chapter_name"]),
+                                    file_name="{}-{}.html".format(book_name, chapter["chapter_name"]),
                                     direction="yinyu/{}".format(book_name),
                                     save_origin=True
                                 )
-                        else: logger.info("🛑 解析章节列表失败")
+                                # 保存章节内容
+                                if chapter_data := self._extract_chapter(content):
+                                    # 组合元数据
+                                    save_data = {
+                                        "book_name": book_name,
+                                        "chapter_name": chapter_data["chapter_name"],
+                                        "chapter_url": chapter_url,
+                                        "content": chapter_data["content"]
+                                    }
+                                    self._txt_saver([save_data])  # 包裹成列表保持接口统一
 
+                        else: logger.info("🛑 解析章节列表失败")
                     max_articles -= 1
                     if max_articles <= 0:
                         break
-
-                # 获取下一页
-                if (next_url := self._get_next_page(booklists)) and next_url != self.current_url:
-                    self.visited_urls.add(self.current_url)
-                    self.current_url = next_url
-                else:
-                    break  # 无更多页面
 
         except KeyboardInterrupt:
             logger.warning("用户中断操作")
@@ -167,3 +185,35 @@ class yinyuSpider(BaseSpider):
         finally:
             logger.info(f"🏁 剩余待爬数量: {max_articles}")
             logger.info("🎉 任务完成")
+
+    def _txt_saver(self, data, base_dir="parsed"):
+        """保存器：parsed/{book_name}/{chapter_name}.txt"""
+        for item in data:
+            if not all(key in item for key in ["book_name", "chapter_name", "content"]):
+                logger.warning("⚠️ 数据字段缺失，跳过保存")
+                continue
+            try:
+                # 准备路径组件
+                book_name = item["book_name"]
+                raw_chapter_name = item["chapter_name"]
+
+                # 创建安全文件名
+                clean_chapter_name = re.sub(r'[\\/*?:"<>|]', '', raw_chapter_name)
+                clean_chapter_name = clean_chapter_name.replace(' ', '_')[:50]  # 限制长度
+                filename = f"{clean_chapter_name}.txt"
+
+                # 创建目录结构
+                save_path = Path(base_dir) / book_name
+                save_path.mkdir(parents=True, exist_ok=True)
+
+                # 写入文件内容
+                with (save_path / filename).open('w', encoding='utf-8') as f:
+                    f.write(f"Book: {book_name}\n")
+                    f.write(f"Chapter: {raw_chapter_name}\n")
+                    f.write(f"URL: {item.get('chapter_url', '')}\n\n")
+                    f.write(item["content"])
+
+                logger.info(f"✅ 成功保存：{save_path / filename}")
+
+            except Exception as e:
+                logger.error(f"🛑 保存失败: {str(e)}", exc_info=True)

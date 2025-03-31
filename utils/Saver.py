@@ -52,7 +52,7 @@ class Saver:
                 Saver._save_excel(data, excel_path, exclude_columns)
 
             # 非结构化数据存储（文本文件）
-            Saver._save_txt_files(data, base_dir)
+            # Saver._save_txt_files(data, base_dir)
 
         except PermissionError:
             logger.info("❌ 权限错误：请关闭已打开的结果文件")

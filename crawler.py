@@ -1,21 +1,8 @@
 # crawler.py
-from random import random, gauss
-from turtle import delay
-
-from cnn_spider import CNNSpider
-from kuaishu_spider import kuaishuSpider
-
-from biqu_Spider import biquSpider
 from utils.TqdmLogHandler import logger
 from yinyuxiaoshuo_spider import yinyuSpider
 
-
 def main():
-    # 初始化目录结构
-    # Path("origin/Chin").mkdir(parents=True, exist_ok=True)
-    # Path("origin/Engl").mkdir(parents=True, exist_ok=True)
-    # Path("parsed/cnn").mkdir(parents=True, exist_ok=True)
-    # Path("parsed/novel").mkdir(parents=True, exist_ok=True)
 
     # 配置爬虫参数
     common_config = {
