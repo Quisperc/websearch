@@ -120,3 +120,7 @@ class Fetcher:
             f.write(content)
 
         logger.info(f"✅ 原始网页保存至: {save_path}")
+
+    # def get_save_path(self,direction,file_name=None):
+    #     save_path = Path("origin") / direction / file_name
+    #     return save_path
