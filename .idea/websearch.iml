@@ -4,6 +4,7 @@
     <content url="file://$MODULE_DIR$">
       <excludeFolder url="file://$MODULE_DIR$/origin" />
       <excludeFolder url="file://$MODULE_DIR$/parsed" />
+      <excludeFolder url="file://$MODULE_DIR$/注释版" />
     </content>
     <orderEntry type="jdk" jdkName="websearch" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

@@ -1,4 +1,6 @@
 # crawler.py
+import os
+
 from utils.TqdmLogHandler import logger
 from yinyuxiaoshuo_spider import yinyuSpider
 
@@ -7,62 +9,35 @@ def main():
     # 配置爬虫参数
     common_config = {
         "retries": 3,
-        "timeout": 30000,
-        "delay_range": (5000, 6000),
+        "timeout": 30,
+        "delay_range": (1, 2),
         "threads": 5
     }
 
     # 启动小说爬虫
-    # novel_spider = NovelSpider({
+    # kuaishunovel_spider = kuaishuSpider({
     #     **common_config,
     #     "delay_range": (2, 5)  # 小说站需要更保守的爬取间隔
     # })
-    # novel_spider.crawl(start_page=27710, end_page=27749)
-    #
     # delay_time = max(3, gauss(4.0, 0.6))  # 均值1秒，标准差0.3秒，最低3秒
     # delay(delay_time)
-    # novel_spider.crawl(start_page=27750, end_page=27802)
-    #
-    # delay_time = max(3, gauss(4.0, 0.6))  # 均值1秒，标准差0.3秒，最低3秒
-    # delay(delay_time)
-    # novel_spider.crawl(start_page=28166, end_page=28220)
-    #
-    # delay_time = max(3, gauss(4.0, 0.6))  # 均值1秒，标准差0.3秒，最低3秒
-    # delay(delay_time)
-    # novel_spider.crawl(start_page=27960, end_page=28103)
-    #
-    # delay_time = max(3, gauss(4.0, 0.6))  # 均值1秒，标准差0.3秒，最低3秒
-    # delay(delay_time)
-    # novel_spider.crawl(start_page=27803, end_page=27834)
-    #
-    # delay_time = max(3, gauss(4.0, 0.6))  # 均值1秒，标准差0.3秒，最低3秒
-    # delay(delay_time)
-    # novel_spider.crawl(start_page=27934, end_page=27989)
-    #
-    # delay_time = max(3, gauss(4.0, 0.6))  # 均值1秒，标准差0.3秒，最低3秒
-    # delay(delay_time)
-    # novel_spider.crawl(start_page=27835, end_page=27933)
-    #
-    # delay_time = max(3, gauss(4.0, 0.6))  # 均值1秒，标准差0.3秒，最低3秒
-    # delay(delay_time)
-    # novel_spider.crawl(start_page=28098, end_page=28174)
-
+    # kuaishunovel_spider.crawl(start_page=27710, end_page=27802)
 
     # # 启动CNN爬虫
     # cnn_spider = CNNSpider(common_config)
     # cnn_spider.crawl(max_articles=600)
 
-    # novel_spider = biquSpider({
+    # biqunovel_spider = biquSpider({
     #     **common_config,
-    #     "delay_range": (2, 5)  # 小说站需要更保守的爬取间隔
+    #     "delay_range": (1, 2)  # 小说站需要更保守的爬取间隔
     # })
-    # novel_spider.crawl(503)
+    # biqunovel_spider.crawl(503)
 
-    novel_spider = yinyuSpider({
+    Englishnovel_spider = yinyuSpider({
         **common_config,
         "delay_range": (1, 2)  # 小说站需要更保守的爬取间隔
     })
-    novel_spider.crawl(10)
+    Englishnovel_spider.crawl(10)
     logger.info("🎉 所有任务已完成！")
     # 显示最终统计
     # logger.info("\n📊 最终统计:")
