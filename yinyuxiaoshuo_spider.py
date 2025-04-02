@@ -14,7 +14,7 @@ from utils.WebUtils import WebUtils
 
 
 class yinyuSpider(BaseSpider):
-    """英语小说章节爬虫（优化版）"""
+    """英语小说章节爬虫"""
 
     def __init__(self, config=None):
         self.base_dir = "yinyu"
