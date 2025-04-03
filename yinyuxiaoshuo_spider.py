@@ -50,7 +50,8 @@ class yinyuSpider(BaseSpider):
 
     def load_processed_urls(self):
         """加载已处理的URL"""
-        self.processed_urls = set()
+        # self.processed_urls = set()
+        self.visited_urls = set()
         try:
             with open(self.csv_file, 'r', encoding='utf-8-sig') as f:
                 reader = csv.DictReader(f)
@@ -70,11 +71,16 @@ class yinyuSpider(BaseSpider):
         except Exception as e:
             logger.error(f"CSV记录更新失败: {str(e)}")
 
-    def _get_source_file(self, url: str, direction: str, file_name = None):
+    def _get_source_file(self, url: str, direction: str, file_name=None):
         """记录原始文件信息"""
         if not file_name:
             file_name = WebUtils.generate_filename(url)
+            file_name = self.sanitize_filename(file_name)
         self.sourcefile = Path("origin") / direction / file_name
+
+    def sanitize_filename(self, name: str) -> str:
+        """替换非法字符为下划线"""
+        return re.sub(r'[\\/*?:"<>|]', '_', name).strip()
 
     def fetch_content(self, url: str, direction: str, file_name: str = None) -> Optional[str]:
         """统一封装的内容获取方法"""
@@ -175,10 +181,15 @@ class yinyuSpider(BaseSpider):
     def process_chapter(self, chapter: Dict, book_name: str) -> None:
         """处理单个章节的完整流程"""
         chapter_url = chapter["url"]
+        # 规范书名与章节名
+        sanitized_book_name = self.sanitize_filename(book_name)
+        sanitized_chapter_name = self.sanitize_filename(chapter['chapter_name'])
+        file_name = f"{sanitized_book_name}-{sanitized_chapter_name}.html"
+
         content = self.fetch_content(
             chapter_url,
-            f"{self.base_dir}/{book_name}",
-            f"{book_name}-{chapter['chapter_name']}.html"
+            f"{self.base_dir}/{sanitized_book_name}",
+            file_name=file_name
         )
         if not content:
             return
@@ -200,8 +211,8 @@ class yinyuSpider(BaseSpider):
         """统一的章节保存方法"""
         try:
             # 生成安全文件名
-            safe_book_name = re.sub(r'[\\/*?:"<>|]', '', book_name)[:50]
-            safe_chapter_name = re.sub(r'[\\/*?:"<>|]', '', chapter_name)[:50]
+            safe_book_name = self.sanitize_filename(book_name)[:50]
+            safe_chapter_name = self.sanitize_filename(chapter_name)[:50]
 
             # 创建存储路径
             save_dir = Path("parsed") / safe_book_name

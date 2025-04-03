@@ -130,7 +130,6 @@ class biquSpider(BaseSpider):
                 # 其余P标签作为context
                 content_elems = soup.select('#chaptercontent p')
                 content_text = "\n".join([elem.get_text(strip=True) for elem in content_elems])
-                # chapter_name = re.sub(r'第\d+页$', '', chapter_name)
                 chapter_name = chapter_name + f"第{page + 1}页"
 
             self._save_chapter_data(
