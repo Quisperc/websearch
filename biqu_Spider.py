@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Optional
 from urllib.parse import urljoin
 
+import pandas as pd
 from bs4 import BeautifulSoup
 
 from utils.BaseSpider import BaseSpider
@@ -169,7 +170,7 @@ class biquSpider(BaseSpider):
                 self.current_url = self.visited_urls[-1]
                 self.visited_urls.pop(-1)
                 # 删除csv文件最后一条数据
-                self.delete_last_line()
+                self.delete_row_by_url(self.current_url)
                 current_num = current_num + len(self.visited_urls)
             while max_articles > current_num and self.current_url:
                 # 获取并缓存原始页面
@@ -305,28 +306,13 @@ class biquSpider(BaseSpider):
         except Exception as e:
             logger.error(f"🛑 文件保存失败: {str(e)}", exc_info=True)
 
-    def delete_last_line(self):
-        """ 高效处理大文件（不加载全部内容到内存） """
-        with open(self.csv_file, 'r+', encoding='utf-8-sig') as f:
-            # 定位到文件末尾
-            f.seek(0, os.SEEK_END)
-            pos = f.tell() - 1  # 从末尾前一个字符开始查找
+    def delete_row_by_url(self, current_url):
+        # 读取CSV文件
+        df = pd.read_csv(self.csv_file, encoding='utf-8-sig')
 
-            # 找到最后一个换行符的位置
-            last_cr = -1  # 记录最后一个换行符的位置
-            while pos > 0:
-                f.seek(pos)
-                char = f.read(1)
-                if char == '\n':
-                    last_cr = pos
-                    break
-                pos -= 1
+        # 过滤掉url列等于current_url的行
+        df = df[df['url'] != current_url]
 
-            # 处理特殊情况
-            if last_cr == -1:  # 文件无换行符（即单行）
-                f.seek(0)
-                f.truncate(0)
-            else:
-                # 截断到最后一个换行符的位置
-                f.seek(last_cr)
-                f.truncate()
+        # 保存结果（覆盖原文件或保存为新文件）
+        df.to_csv(self.csv_file, encoding='utf-8-sig', index=False)  # 覆盖原文件
+        # df.to_csv('new_file.csv', index=False)  # 保存为新文件（保留原文件）
