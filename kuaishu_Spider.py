@@ -1,4 +1,4 @@
-# kuaishu_spider.py 已经弃用（ip被封禁）
+# kuaishu_Spider.py 已经弃用（ip被封禁）
 from utils.BaseSpider import BaseSpider
 from utils.Saver import Saver
 from utils.TqdmLogHandler import logger

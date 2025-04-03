@@ -6,7 +6,5 @@
 # Datasource local storage ignored files
 /dataSources/
 /dataSources.local.xml
-../v1
-../v2
 ../origin
 ../parsed
