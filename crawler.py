@@ -32,13 +32,13 @@ def main():
         **common_config,
         "delay_range": (1, 2)  # 小说站需要更保守的爬取间隔
     })
-    biqunovel_spider.crawl(3)
+    biqunovel_spider.crawl(503)
 
-    # Englishnovel_spider = yinyuSpider({
-    #     **common_config,
-    #     "delay_range": (1, 2)  # 小说站需要更保守的爬取间隔
-    # })
-    # Englishnovel_spider.crawl(10)
+    Englishnovel_spider = yinyuSpider({
+        **common_config,
+        "delay_range": (1, 2)  # 小说站需要更保守的爬取间隔
+    })
+    Englishnovel_spider.crawl(50)
     logger.info("🎉 所有任务已完成！")
     # 显示最终统计
     # logger.info("\n📊 最终统计:")

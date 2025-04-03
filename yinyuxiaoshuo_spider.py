@@ -26,7 +26,7 @@ class yinyuSpider(BaseSpider):
         self.current_url = self.base_url
 
         # 断点续传
-        self.csv_file = Path(f"parsed/{self.base_dir}/crawl_records.csv")
+        self.csv_file = Path(f"parsed/yingyu_crawl_records.csv")
         self._init_csv()
         self.load_processed_urls()
         self.sourcefile = None

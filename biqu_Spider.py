@@ -1,5 +1,6 @@
 # biqu_Spider.py
 import csv
+import os
 import re
 from datetime import datetime
 from pathlib import Path
@@ -39,18 +40,17 @@ class biquSpider(BaseSpider):
         """
         self.base_dir = "22biqu"
         super().__init__(f"{self.base_dir}", config)  # 继承基类配置
-        self.base_url = "https://m.22biqu.com/biqu5403/5419628.html"  # 初始章节URL
+        self.base_url = "https://m.22biqu.com/biqu5403/5419018.html"  # 初始章节URL
         # self.visited_urls = set()  # 已访问URL集合
         self.visited_urls = []  # 改用列表
 
         self.timeout = self.config.get("timeout", 10)
         self.current_url = self.base_url
-
-        # 章节名
-        self.chapter_name = None
+        self.current_page = 1
 
         # 断点续传
-        self.csv_file = Path(f"parsed/{self.base_dir}/crawl_records.csv")
+        #self.csv_file = Path(f"parsed/{self.base_dir}/biqi_crawl_records.csv")
+        self.csv_file = Path(f"parsed/biqi_crawl_records.csv")
         self._init_csv()
         self.load_processed_urls()
         self.sourcefile = None
@@ -83,7 +83,7 @@ class biquSpider(BaseSpider):
             logger.error(f"解析链接失败: {str(e)}")
             return None
 
-    def _extract_article(self, content, page = 0, chapter_n = None):
+    def _extract_article(self, content, page = 0):
         """解析单章小说内容
 
         提取规则：
@@ -98,37 +98,49 @@ class biquSpider(BaseSpider):
         """
         try:
             soup = BeautifulSoup(content, 'lxml')
-            # <div id="chaptercontent" class="Readarea ReadAjax_content">
-            #                 <p> 第225章 玄学型侦探</p>
-            # 第一个P标签内的作为chapter_name
-            chapter_name = chapter_n
-            if chapter_n is None:
-                title_elem = soup.select_one('div#chaptercontent p:first-child')
-                chapter_name = title_elem.get_text(strip=True) if title_elem else "Unknown Chapter"
 
-                # <div id="chaptercontent" class="Readarea ReadAjax_content">
-                #                 <p> 第225章 玄学型侦探
-                # </p><p> 昏暗的房间内铺着一层薄薄的淡红月纱，所有的事物都影影绰绰，不够分明。
-                # </p><p> 三位穿黑外套的男子分别熟睡于不同的地方，而那组小沙发上，克莱恩半融于黑夜般闭着眼睛，似乎也进入了沉眠。
+            # 定位目标元素（带class="title"的span）
+            # target_span = soup.find('span', class_='title')
+            # 获取原始文本并处理
+            # raw_text = target_span.get_text(strip=True) if target_span else "Unknown Chapter" # strip=True自动去除首尾空格
+            # 获取章节名
+            # 定位到目标标签
+            meta_tag = soup.find('meta', attrs={'name': 'keywords'})
+            book_name = "《诡秘之主》"
+            chapter_name = "Unknown Chapter"
+            if meta_tag:
+                # 获取content属性的值
+                content_str = meta_tag['content']
+                # 分割并提取目标部分
+                # 取书名
+                book_name = content_str.split(',', 1)[0]
+                # 1. 按逗号分割，取第二部分
+                second_part = content_str.split(',', 1)[1]  # 1表示只分割一次
+                # 2. 按句号分割，取第二部分
+                self.current_page = second_part.split('.',1)[0].strip()
+                chapter_name = second_part.split('.', 1)[1].strip()
+
+            if not page:
                 # 其余P标签作为context
                 content_elems = soup.select('#chaptercontent p:not(:first-child)')
                 content_text = "\n".join([elem.get_text(strip=True) for elem in content_elems])
                 chapter_name = chapter_name + f"第{page + 1}页"
-            if chapter_n:
-                chapter_name = chapter_n
+            else:
                 # 其余P标签作为context
                 content_elems = soup.select('#chaptercontent p')
                 content_text = "\n".join([elem.get_text(strip=True) for elem in content_elems])
-                chapter_name = re.sub(r'第\d+页$', '', chapter_name)
+                # chapter_name = re.sub(r'第\d+页$', '', chapter_name)
                 chapter_name = chapter_name + f"第{page + 1}页"
 
             self._save_chapter_data(
-                book_name="《诡秘之主》",
+                book_name=book_name,
                 chapter_name=chapter_name,
                 chapter_url=self.current_url,
                 content=content_text
             )
             return {
+                "chapter_page": self.current_page,
+                "book_name":book_name,
                 "chapter_name":chapter_name,
                 "chapter_url":self.current_url,
                 "content":content_text
@@ -151,7 +163,14 @@ class biquSpider(BaseSpider):
         """
         current_num = 0
         try:
-            self.current_url = self.base_url
+            if not self.visited_urls:
+                self.current_url = self.base_url
+            else:
+                self.current_url = self.visited_urls[-1]
+                self.visited_urls.pop(-1)
+                # 删除csv文件最后一条数据
+                self.delete_last_line()
+                current_num = current_num + len(self.visited_urls)
             while max_articles > current_num and self.current_url:
                 # 获取并缓存原始页面
                 page2 = current_num % 2
@@ -163,14 +182,10 @@ class biquSpider(BaseSpider):
                 )
                 if content is None:
                     # 获取下一个链接
-                    # self.current_url = self.visited_urls[current_num]
                     current_num += 1
                     continue
                 # 解析正文
-                if not page2:
-                    self.chapter_name = self._extract_article(content,page= page2).get("chapter_name")
-                else:
-                    self._extract_article(content,page= page2, chapter_n=self.chapter_name)
+                self._extract_article(content,page= page2)
                 current_num += 1
                 # 获取下一页链接（通常包含0-1个元素）
                 next_links = self._extract_links(content, self.current_url)
@@ -185,7 +200,7 @@ class biquSpider(BaseSpider):
         except Exception as e:
             logger.error(f"爬取流程异常: {str(e)}", exc_info=True)
         finally:
-            logger.info(f"🎉 完成处理 {current_num}/{max_articles} 章")
+            logger.info(f"🎉 完成处理 {int((current_num+1)/2)}/{int((max_articles+1)/2)} 章")
 
     def _init_csv(self):
         """初始化CSV文件并写入表头"""
@@ -206,7 +221,8 @@ class biquSpider(BaseSpider):
 
     def load_processed_urls(self):
         """加载已处理的URL"""
-        self.processed_urls = set()
+        # self.processed_urls = set()
+        self.visited_urls = []
         try:
             with open(self.csv_file, 'r', encoding='utf-8-sig') as f:
                 reader = csv.DictReader(f)
@@ -288,3 +304,29 @@ class biquSpider(BaseSpider):
             logger.info(f"✅ 成功保存章节: {file_path}")
         except Exception as e:
             logger.error(f"🛑 文件保存失败: {str(e)}", exc_info=True)
+
+    def delete_last_line(self):
+        """ 高效处理大文件（不加载全部内容到内存） """
+        with open(self.csv_file, 'r+', encoding='utf-8-sig') as f:
+            # 定位到文件末尾
+            f.seek(0, os.SEEK_END)
+            pos = f.tell() - 1  # 从末尾前一个字符开始查找
+
+            # 找到最后一个换行符的位置
+            last_cr = -1  # 记录最后一个换行符的位置
+            while pos > 0:
+                f.seek(pos)
+                char = f.read(1)
+                if char == '\n':
+                    last_cr = pos
+                    break
+                pos -= 1
+
+            # 处理特殊情况
+            if last_cr == -1:  # 文件无换行符（即单行）
+                f.seek(0)
+                f.truncate(0)
+            else:
+                # 截断到最后一个换行符的位置
+                f.seek(last_cr)
+                f.truncate()
