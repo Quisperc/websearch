@@ -5,7 +5,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urljoin
-from lxml import etree
+
+from bs4 import BeautifulSoup
 
 from utils.BaseSpider import BaseSpider
 from utils.TqdmLogHandler import logger
@@ -39,10 +40,14 @@ class biquSpider(BaseSpider):
         self.base_dir = "22biqu"
         super().__init__(f"{self.base_dir}", config)  # 继承基类配置
         self.base_url = "https://m.22biqu.com/biqu5403/5419628.html"  # 初始章节URL
-        self.visited_urls = set()  # 已访问URL集合（当前未启用）
+        # self.visited_urls = set()  # 已访问URL集合
+        self.visited_urls = []  # 改用列表
 
         self.timeout = self.config.get("timeout", 10)
         self.current_url = self.base_url
+
+        # 章节名
+        self.chapter_name = None
 
         # 断点续传
         self.csv_file = Path(f"parsed/{self.base_dir}/crawl_records.csv")
@@ -68,20 +73,20 @@ class biquSpider(BaseSpider):
             Exception: 解析异常时记录错误日志
         """
         try:
-            html = etree.HTML(content)
-            # 精准定位下一页按钮（复合选择器）
-            raw_links = html.xpath('//a[@id="pt_next"][contains(@class,"Readpage_up")]/@href')
+            soup = BeautifulSoup(content, 'lxml')
+            # 精准定位下一页按钮（复合选择器
+            raw_links = soup.select_one('a#pt_next.Readpage_up')['href']
             # 生成绝对URL（处理分页参数）
-            return [urljoin(current_url, link) for link in raw_links]
+            # return [urljoin(current_url, link) for link in raw_links]
+            return [urljoin(current_url, raw_links)]
         except Exception as e:
             logger.error(f"解析链接失败: {str(e)}")
-            return []
+            return None
 
-    def _extract_article(self, content):
+    def _extract_article(self, content, page = 0, chapter_n = None):
         """解析单章小说内容
 
         提取规则：
-        - 标题从h1标签直接获取
         - 正文内容合并所有文本节点
         - 保留当前URL作为数据溯源
 
@@ -92,13 +97,41 @@ class biquSpider(BaseSpider):
             dict/None: 包含标题、内容等字段的字典，解析失败返回None
         """
         try:
-            html = etree.HTML(content)
+            soup = BeautifulSoup(content, 'lxml')
+            # <div id="chaptercontent" class="Readarea ReadAjax_content">
+            #                 <p> 第225章 玄学型侦探</p>
+            # 第一个P标签内的作为chapter_name
+            chapter_name = chapter_n
+            if chapter_n is None:
+                title_elem = soup.select_one('div#chaptercontent p:first-child')
+                chapter_name = title_elem.get_text(strip=True) if title_elem else "Unknown Chapter"
+
+                # <div id="chaptercontent" class="Readarea ReadAjax_content">
+                #                 <p> 第225章 玄学型侦探
+                # </p><p> 昏暗的房间内铺着一层薄薄的淡红月纱，所有的事物都影影绰绰，不够分明。
+                # </p><p> 三位穿黑外套的男子分别熟睡于不同的地方，而那组小沙发上，克莱恩半融于黑夜般闭着眼睛，似乎也进入了沉眠。
+                # 其余P标签作为context
+                content_elems = soup.select('#chaptercontent p:not(:first-child)')
+                content_text = "\n".join([elem.get_text(strip=True) for elem in content_elems])
+                chapter_name = chapter_name + f"第{page + 1}页"
+            if chapter_n:
+                chapter_name = chapter_n
+                # 其余P标签作为context
+                content_elems = soup.select('#chaptercontent p')
+                content_text = "\n".join([elem.get_text(strip=True) for elem in content_elems])
+                chapter_name = re.sub(r'第\d+页$', '', chapter_name)
+                chapter_name = chapter_name + f"第{page + 1}页"
+
+            self._save_chapter_data(
+                book_name="《诡秘之主》",
+                chapter_name=chapter_name,
+                chapter_url=self.current_url,
+                content=content_text
+            )
             return {
-                "title": html.xpath('//h1/text()')[0].strip(),  # 标题必填项
-                "content": '\n'.join(
-                    html.xpath('//div[@id="chaptercontent"]//text()')  # 合并所有文本节点
-                ).strip(),
-                "url": self.current_url  # 记录数据来源
+                "chapter_name":chapter_name,
+                "chapter_url":self.current_url,
+                "content":content_text
             }
         except Exception as e:
             logger.error(f"解析失败: {str(e)}")
@@ -116,24 +149,43 @@ class biquSpider(BaseSpider):
         Args:
             max_articles (int): 最大抓取章节数，默认50章
         """
-        current_url = self.base_url
+        current_num = 0
+        try:
+            self.current_url = self.base_url
+            while max_articles > current_num and self.current_url:
+                # 获取并缓存原始页面
+                page2 = current_num % 2
+                page1 = int(current_num / 2)
+                content = self.fetch_content(
+                    self.current_url,
+                    direction=f"{self.base_dir}",
+                    file_name=f"《诡秘之主》-第{page1 + 1}章第{page2 + 1}页.html"
+                )
+                if content is None:
+                    # 获取下一个链接
+                    # self.current_url = self.visited_urls[current_num]
+                    current_num += 1
+                    continue
+                # 解析正文
+                if not page2:
+                    self.chapter_name = self._extract_article(content,page= page2).get("chapter_name")
+                else:
+                    self._extract_article(content,page= page2, chapter_n=self.chapter_name)
+                current_num += 1
+                # 获取下一页链接（通常包含0-1个元素）
+                next_links = self._extract_links(content, self.current_url)
+                if not next_links:
+                    logger.info("🛑 已到达最终章节")
+                    break
 
-        while max_articles > 0 and current_url:
-            # 防重复机制（当前注释状态，需要时可启用）
-            if current_url in self.visited_urls:
-                break
-
-            # 获取并缓存原始页面
-            content = self.fetcher.fetch_and_save(current_url, direction=f"{self.base_dir}", save_origin=True)
-
-            # 获取下一页链接（通常包含0-1个元素）
-            next_links = self._extract_links(content, current_url)
-            if not next_links:
-                logger.info("🛑 已到达最终章节")
-                break
-
-            # 更新当前URL（实现链式跳转）
-            current_url = next_links[0]
+                # 更新当前URL（实现链式跳转）
+                self.current_url = next_links[0]
+        except KeyboardInterrupt:
+            logger.warning("⽤户中断操作")
+        except Exception as e:
+            logger.error(f"爬取流程异常: {str(e)}", exc_info=True)
+        finally:
+            logger.info(f"🎉 完成处理 {current_num}/{max_articles} 章")
 
     def _init_csv(self):
         """初始化CSV文件并写入表头"""
@@ -161,7 +213,7 @@ class biquSpider(BaseSpider):
                 for row in reader:
                     if row['url'] and row['status'] == 'success':
                         # self.processed_urls.add(row['url'])
-                        self.visited_urls.add(row['url'])
+                        self.visited_urls.append(row['url'])
         except FileNotFoundError:
             pass
 
@@ -184,9 +236,10 @@ class biquSpider(BaseSpider):
         """统一封装的内容获取方法"""
         if url in self.visited_urls:
             logger.warning(f"⏩ 跳过已保存URL: {url}")
-            return url
+            return None
 
-        self.visited_urls.add(url)
+        # self.visited_urls.add(url)
+        self.visited_urls.append(url)  # 按顺序记录
         self.random_delay()
         logger.info(f"📖 访问URL: {url}")
         content = self.fetcher.fetch_and_save(
