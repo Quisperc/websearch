@@ -1,6 +1,5 @@
 # biqu_Spider.py
 import csv
-import os
 import re
 from datetime import datetime
 from pathlib import Path

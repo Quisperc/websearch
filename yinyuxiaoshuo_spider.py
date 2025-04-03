@@ -1,15 +1,15 @@
 # yinyu_Spider.py
+import csv
 import re
+from datetime import datetime
 from pathlib import Path
+from typing import Optional, Dict
 from urllib.parse import urljoin
+
 from bs4 import BeautifulSoup
-from typing import Optional, Dict, List
+
 from utils.BaseSpider import BaseSpider
 from utils.TqdmLogHandler import logger
-
-import csv
-from datetime import datetime
-
 from utils.WebUtils import WebUtils
 
 

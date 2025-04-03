@@ -1,6 +1,8 @@
 # cnn_spider.py （分类过于麻烦，已弃用）
 import json
+
 from lxml import etree
+
 from utils.BaseSpider import BaseSpider
 from utils.Saver import Saver
 from utils.TqdmLogHandler import logger
