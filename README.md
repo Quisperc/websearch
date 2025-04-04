@@ -14,7 +14,12 @@
     kuaishu_Spider.py （未维护）快书网站爬虫具体实现
     yinyuxiaoshuo_Spider.py 英语小说网站爬虫具体实现
     crawler.py 程序入口文件，自定义配置启动
-
+## 项目功能
+    1. 提供一个基类，方便后续爬虫的扩展
+    2. 支持多线程爬取网页
+    3. 支持多种网页编码格式
+    4. 支持随机请求头
+    5. 支持日志记录
 ## 后言
     还有好多没做呢，加油你可以的。
 ![websearchTodo](https://quisper.obs.cn-east-3.myhuaweicloud.com/picgo/websearchTodo.png)
