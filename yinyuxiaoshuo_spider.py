@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup
 from utils.BaseSpider import BaseSpider
 from utils.TqdmLogHandler import logger
 from utils.WebUtils import WebUtils
+from utils.dealer_en import dealer_en
 
 
 class yinyuSpider(BaseSpider):
@@ -205,6 +206,13 @@ class yinyuSpider(BaseSpider):
             chapter_url=chapter_url,
             content=chapter_data["content"]
         )
+
+        # 处理章节内容
+        text = dealer_en.clean_text(chapter_data["content"], uppercase=False)
+        dealer_en._save_chapter_data(
+            book_name=book_name,
+            chapter_name=chapter_data["chapter_name"],
+            text=text)
 
     def _save_chapter_data(self, book_name: str, chapter_name: str,
                            chapter_url: str, content: str) -> None:
