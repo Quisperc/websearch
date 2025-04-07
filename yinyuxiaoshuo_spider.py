@@ -226,6 +226,11 @@ class yinyuSpider(BaseSpider):
             save_dir = Path("parsed") / safe_book_name
             save_dir.mkdir(parents=True, exist_ok=True)
 
+            # 预处理后的章节目录
+            dealer_dir = save_dir / chapter_name
+            dealer_dir.mkdir(parents=True, exist_ok=True)
+            dealer_path = dealer_dir / f"{safe_book_name}-{safe_chapter_name}.txt"
+
             # 写入文件内容
             file_path = save_dir / f"{safe_chapter_name}.txt"
             with file_path.open("w", encoding="utf-8-sig") as f:
