@@ -221,6 +221,7 @@ class biquSpider(BaseSpider):
                     'book_name',
                     'chapter_name',
                     'status'
+                    'dealer_file'
                 ])
                 writer.writeheader()
 
@@ -308,7 +309,8 @@ class biquSpider(BaseSpider):
                 'parsed_file': str(file_path),
                 'book_name': book_name,
                 'chapter_name': chapter_name,
-                'status': "success"
+                'status': "success",
+                'dealer_file': str(dealer_path)
             })
 
             logger.info(f"✅ 成功保存章节: {file_path}")
