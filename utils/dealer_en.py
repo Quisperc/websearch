@@ -69,7 +69,7 @@ class dealer_en:
         text = ' '.join(words)
         return text
 
-    def _save_chapter_data(book_name: str, chapter_name: str,
+    def _save_chapter_data(self, book_name: str, chapter_name: str,
                            text: str) -> None:
         """统一的章节保存方法"""
         try:

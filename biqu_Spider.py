@@ -13,7 +13,7 @@ from utils.BaseSpider import BaseSpider
 from utils.TqdmLogHandler import logger
 from utils.WebUtils import WebUtils
 # 处理
-from utils.dealer_cn import dealer_cn  as dealer_cn
+from utils.dealer_cn import dealer_cn
 
 
 class biquSpider(BaseSpider):
@@ -56,6 +56,9 @@ class biquSpider(BaseSpider):
         self._init_csv()
         self.load_processed_urls()
         self.sourcefile = None
+
+        # 处理器实例
+        self.dealer = dealer_cn(dealer=None)
 
     def _extract_links(self, content, current_url):
         """解析下一页链接
@@ -100,14 +103,6 @@ class biquSpider(BaseSpider):
         """
         try:
             soup = BeautifulSoup(content, 'lxml')
-
-            # 单词字符化、删除特殊字符、大小写转换
-            # dealer_cn.clean_text(soup)
-
-            # 定位目标元素（带class="title"的span）
-            # target_span = soup.find('span', class_='title')
-            # 获取原始文本并处理
-            # raw_text = target_span.get_text(strip=True) if target_span else "Unknown Chapter" # strip=True自动去除首尾空格
             # 获取章节名
             # 定位到目标标签
             meta_tag = soup.find('meta', attrs={'name': 'keywords'})
@@ -144,10 +139,9 @@ class biquSpider(BaseSpider):
             )
 
             # 处理章节内容
-            dealer = dealer_cn(dealer=None)
             # 单词字符化、删除特殊字符、大小写转换
-            text = dealer.clean_text(content_text)
-            dealer._save_chapter_data(
+            text = self.dealer.clean_text(content_text)
+            self.dealer._save_chapter_data(
                 book_name=book_name,
                 chapter_name= chapter_name,
                 content= text)

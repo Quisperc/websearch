@@ -32,6 +32,8 @@ class yinyuSpider(BaseSpider):
         self.load_processed_urls()
         self.sourcefile = None
 
+        self.dealer = dealer_en(dealer=None)
+
     def _init_csv(self):
         """初始化CSV文件并写入表头"""
         # 创建父目录（自动递归创建）
@@ -208,8 +210,8 @@ class yinyuSpider(BaseSpider):
         )
 
         # 处理章节内容
-        text = dealer_en.clean_text(chapter_data["content"], uppercase=False)
-        dealer_en._save_chapter_data(
+        text = self.dealer.clean_text(chapter_data["content"], uppercase=False)
+        self.dealer._save_chapter_data(
             book_name=book_name,
             chapter_name=chapter_data["chapter_name"],
             text=text)

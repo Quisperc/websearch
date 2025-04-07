@@ -1,6 +1,7 @@
 # crawler.py
 from biqu_Spider import biquSpider
 from utils.TqdmLogHandler import logger
+from utils.dealer_en import dealer_en
 from yinyuxiaoshuo_spider import yinyuSpider
 
 def main():
@@ -32,11 +33,11 @@ def main():
     })
     biqunovel_spider.crawl(2000)
 
-    # Englishnovel_spider = yinyuSpider({
-    #     **common_config,
-    #     "delay_range": (1, 2)  # 小说站需要更保守的爬取间隔
-    # })
-    # Englishnovel_spider.crawl(50)
+    Englishnovel_spider = yinyuSpider({
+        **common_config,
+        "delay_range": (1, 2)  # 小说站需要更保守的爬取间隔
+    })
+    Englishnovel_spider.crawl(25)
     logger.info("🎉 所有任务已完成！")
     # 显示最终统计
     # logger.info("\n📊 最终统计:")
