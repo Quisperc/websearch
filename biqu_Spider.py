@@ -12,6 +12,8 @@ from bs4 import BeautifulSoup
 from utils.BaseSpider import BaseSpider
 from utils.TqdmLogHandler import logger
 from utils.WebUtils import WebUtils
+# 处理
+from utils.dealer_cn import dealer_cn  as dealer_cn
 
 
 class biquSpider(BaseSpider):
@@ -99,6 +101,9 @@ class biquSpider(BaseSpider):
         try:
             soup = BeautifulSoup(content, 'lxml')
 
+            # 单词字符化、删除特殊字符、大小写转换
+            # dealer_cn.clean_text(soup)
+
             # 定位目标元素（带class="title"的span）
             # target_span = soup.find('span', class_='title')
             # 获取原始文本并处理
@@ -137,6 +142,16 @@ class biquSpider(BaseSpider):
                 chapter_url=self.current_url,
                 content=content_text
             )
+
+            # 处理章节内容
+            dealer = dealer_cn(dealer=None)
+            # 单词字符化、删除特殊字符、大小写转换
+            text = dealer.clean_text(content_text)
+            dealer._save_chapter_data(
+                book_name=book_name,
+                chapter_name= chapter_name,
+                content= text)
+
             return {
                 "chapter_page": self.current_page,
                 "book_name":book_name,
