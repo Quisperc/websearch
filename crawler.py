@@ -1,6 +1,7 @@
 # crawler.py
 from biqu_Spider import biquSpider
 from utils.TqdmLogHandler import logger
+from utils.dealer_cn import dealer_cn
 from utils.dealer_en import dealer_en
 from yinyuxiaoshuo_spider import yinyuSpider
 
@@ -29,12 +30,14 @@ def main():
 
     biqunovel_spider = biquSpider({
         **common_config,
+        "dealer": dealer_cn(),
         "delay_range": (1, 2)  # 小说站需要更保守的爬取间隔
     })
     biqunovel_spider.crawl(2000)
 
     Englishnovel_spider = yinyuSpider({
         **common_config,
+        "dealer": dealer_en(),
         "delay_range": (1, 2)  # 小说站需要更保守的爬取间隔
     })
     Englishnovel_spider.crawl(25)

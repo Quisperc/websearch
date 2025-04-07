@@ -57,9 +57,6 @@ class biquSpider(BaseSpider):
         self.load_processed_urls()
         self.sourcefile = None
 
-        # 处理器实例
-        self.dealer = dealer_cn(dealer=None)
-
     def _extract_links(self, content, current_url):
         """解析下一页链接
 

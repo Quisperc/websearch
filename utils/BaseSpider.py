@@ -42,6 +42,9 @@ class BaseSpider(ABC):
         self.name = name
         self.config = config or {}
 
+        # 设置默认配置参数
+        self.dealer = None  # 文本处理器
+
         # 初始化请求器（配置重试和超时）
         self.fetcher = Fetcher(
             retries=self.config.get('retries', 3),  # 默认3次重试

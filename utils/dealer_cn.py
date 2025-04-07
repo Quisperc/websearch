@@ -8,7 +8,7 @@ from utils.TqdmLogHandler import logger
 
 class dealer_cn:
     stopwords = set()  # 类变量，存储停用词
-    def __init__(self, dealer):
+    def __init__(self, dealer = None):
         self.dealer = dealer
         # 初始化时加载停用词
         self.load_stopwords()

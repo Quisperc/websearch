@@ -32,8 +32,6 @@ class yinyuSpider(BaseSpider):
         self.load_processed_urls()
         self.sourcefile = None
 
-        self.dealer = dealer_en(dealer=None)
-
     def _init_csv(self):
         """初始化CSV文件并写入表头"""
         # 创建父目录（自动递归创建）
